@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Game Service</title>
+    <script src="https://www.gstatic.com/firebasejs/4.13.0/firebase.js"></script>
+    <script>
+    // Initialize Firebase
+    var config = {
+        apiKey: "AIzaSyBeYiCa-VQL3jbqw8yflUeGKNXSq1MYvR0",
+        authDomain: "fir-gameservice.firebaseapp.com",
+        databaseURL: "https://fir-gameservice.firebaseio.com",
+        projectId: "fir-gameservice",
+        storageBucket: "fir-gameservice.appspot.com",
+        messagingSenderId: "661257805767"
+    };
+    firebase.initializeApp(config);
+    </script>
+    <link rel="stylesheet" href="./css/main.css">
+    <script src="./js/main.js"></script>
+</head>
+<body>
+    <canvas id="game_canvas"></canvas>
+</body>
+</html>
