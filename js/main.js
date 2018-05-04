@@ -334,68 +334,13 @@
 
         }
     }
-    class Vec{
-        constructor(x, y){
-            this.x = x;
-            this.y = y;
-            this.ang = 0;
-        }
-        add(){
-            if(typeof arguments[0] == 'number' && arguments[1] == undefined){
-                this.x += arguments[0];
-                this.y += arguments[0];
-            }else if(typeof arguments[0] == 'number' && typeof arguments[1] == 'number'){
-                this.x += arguments[0];
-                this.y += arguments[1];
-            }else if(arguments[0] instanceof this){
-                this.x += arguments[0].x;
-                this.y += arguments[0].y;
-            }
-        }
-        mult(){
-            if(typeof arguments[0] == 'number' && arguments[1] == undefined){
-                this.x *= arguments[0];
-                this.y *= arguments[0];
-            }else if(typeof arguments[0] == 'number' && typeof arguments[1] == 'number'){
-                this.x *= arguments[0];
-                this.y *= arguments[1];
-            }else if(arguments[0] instanceof this){
-                this.x *= arguments[0].x;
-                this.y *= arguments[0].y;
-            }
-        }
-        div(){
-            if(typeof arguments[0] == 'number' && arguments[1] == undefined){
-                this.x /= arguments[0];
-                this.y /= arguments[0];
-            }else if(typeof arguments[0] == 'number' && typeof arguments[1] == 'number'){
-                this.x /= arguments[0];
-                this.y /= arguments[1];
-            }else if(arguments[0] instanceof this){
-                this.x /= arguments[0].x;
-                this.y /= arguments[0].y;
-            }
-        }
-        set(){
-            if(typeof arguments[0] == 'number' && arguments[1] == undefined){
-                this.x = arguments[0];
-                this.y = arguments[0];
-            }else if(typeof arguments[0] == 'number' && typeof arguments[1] == 'number'){
-                this.x = arguments[0];
-                this.y = arguments[1];
-            }else if(arguments[0] instanceof this){
-                this.x = arguments[0].x;
-                this.y = arguments[0].y;
-            }
-        }
-    }
     class Player{
         constructor(playerID, pos){
             this.playerID = playerID;
             this.pos = pos;
         }
         moveBy(dPos){
-            this.pos.add(dPos);
+            this.pos = this.pos.add(dPos);
         }
         moveTo(newPos){
             this.pos.set(newPos);
@@ -404,7 +349,27 @@
     class GameClient {
         constructor(clientID) {
             this.clientID = clientID;
-            this.player = new Player(this.clientID, new Vec(0, 0));
+            this.player = new Player(this.clientID, new fabric.Point(50, 50));
+            this.Render;
+            this.avatar;
+        }
+        init(Render){
+            this.avatar = new fabric.Rect({
+                left: 100,
+                top: 100,
+                fill: config.debug?'red':'green',
+                width: 20,
+                height: 20,
+                selectable: true
+            });
+            this.Render = Render;
+            this.Render.add(this.avatar);
+        }
+        update(){
+            let a = this.avatar.canvas.vptCoords.br;
+            if(a){
+                this.avatar.setPositionByOrigin(this.player.pos,'center','center');
+            }
         }
     }
     class GamePsuedoServer {
@@ -426,38 +391,67 @@
     function Test(){
         let UserClient = new GameClient(Hash(128));
         let GameRender = new fabric.Canvas('game_canvas');
-        let rect = new fabric.Rect({
-            left: 100,
-            top: 100,
-            fill: 'red',
-            width: 20,
-            height: 20,
-            selectable: true
-        });
-        GameRender.add(rect);
-        window.rect = rect;
+        GameRender.renderOnAddRemove = true;
+        UserClient.init(GameRender);
+        window.rect = UserClient;
         let MyKeyboard = new KeyboardHandler();
         CreateKeyInputs(MyKeyboard, DefaultKeys);
         MyKeyboard.addEventListener(37, 'keydown', function(e){
-            console.log(e);
-            console.log('left arrow pushed');
+            UserClient.player.moveBy(new fabric.Point(-10, 0));
+
+        });
+        MyKeyboard.addEventListener(38, 'keydown', function(e){
+            UserClient.player.moveBy(new fabric.Point(0, -10));
+
+        });
+        MyKeyboard.addEventListener(39, 'keydown', function(e){
+            UserClient.player.moveBy(new fabric.Point(10, 0));
+
+        });
+        MyKeyboard.addEventListener(40, 'keydown', function(e){
+            UserClient.player.moveBy(new fabric.Point(0, 10));
+
         });
         console.log(MyKeyboard);
         console.log(UserClient);
+        console.log(UserClient.avatar)
+        function update(){
+            UserClient.update();
+            GameRender.renderAndReset();
+            requestAnimationFrame(update)
+        }
+        update();
     }
     function App(){
+        let UserClient = new GameClient(Hash(128));
         let GameRender = new fabric.Canvas('game_canvas');
-        let rect = new fabric.Rect({
-            left: 100,
-            top: 100,
-            fill: 'green',
-            width: 20,
-            height: 20,
-            selectable: true
-        });
-        GameRender.add(rect);
+        GameRender.renderOnAddRemove = true;
+        UserClient.init(GameRender);
+        window.rect = UserClient;
         let MyKeyboard = new KeyboardHandler();
         CreateKeyInputs(MyKeyboard, DefaultKeys);
+        MyKeyboard.addEventListener(37, 'keydown', function(e){
+            UserClient.player.moveBy(new fabric.Point(-10, 0));
+
+        });
+        MyKeyboard.addEventListener(38, 'keydown', function(e){
+            UserClient.player.moveBy(new fabric.Point(0, -10));
+
+        });
+        MyKeyboard.addEventListener(39, 'keydown', function(e){
+            UserClient.player.moveBy(new fabric.Point(10, 0));
+
+        });
+        MyKeyboard.addEventListener(40, 'keydown', function(e){
+            UserClient.player.moveBy(new fabric.Point(0, 10));
+
+        });
+        function update(){
+            UserClient.update();
+            GameRender.renderAndReset();
+            requestAnimationFrame(update)
+        }
+        update();
     }
     window.addEventListener('load', config.debug?Test:App, {
         once: true
