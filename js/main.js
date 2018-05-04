@@ -287,9 +287,14 @@
     class KeyboardHandler{
         constructor(){
             this.keys = [];
+            this.EventListeners = {};
         }
         init(keys){
             this.keys = keys;
+            this.EventListeners = (function(_this){
+                let tKeys = Object.assign({},_this.keys.map((k,v)=>new Object));
+                return tKeys;
+            })(this);
         }
     }
     class MouseHandler{
@@ -331,6 +336,7 @@
         GameRender.add(rect);
         let MyKeyboard = new KeyboardHandler();
         CreateKeyInputs(MyKeyboard, DefaultKeys);
+        console.log(MyKeyboard)
     }
     function App(){
         let GameRender = new fabric.Canvas('game_canvas');
