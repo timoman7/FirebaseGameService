@@ -259,7 +259,8 @@
     ];
     function Hash(hashLength) {
         let rv = '';
-        for (let i = 0; i < hashLength || 256; i++) {
+        hashLength = hashLength || 256;
+        for (let i = 0; i < hashLength; i++) {
             if (Math.random() > 0.5) {
                 rv += String.fromCharCode((65 + Math.round(Math.random() * 25)) + (Math.round(Math.random()) * 32));
             } else {
@@ -296,15 +297,114 @@
                 return tKeys;
             })(this);
         }
+        addEventListener(keyCode, eventName, fn, options){
+            function tempFunction(e){
+                if(e.keyCode == keyCode){
+                    if(options){
+                        if(options.preventDefault){
+                            e.preventDefault();
+                        }
+                    }
+                    fn(e);
+                }
+            }
+            window.addEventListener(eventName, tempFunction, options);
+            if(this.EventListeners[keyCode][eventName] == undefined){
+                this.EventListeners[keyCode][eventName] = [];
+            }
+            this.EventListeners[keyCode][eventName].push(tempFunction);
+            return tempFunction;
+        }
+        removeEventListener(keyCode, eventName, fn){
+            window.removeEventListener(eventName, fn);
+            if(this.EventListeners[keyCode] != undefined){
+                if(this.EventListeners[keyCode][eventName] != undefined){
+                    this.EventListeners[keyCode][eventName].filter((f)=>{
+                        return f != fn;
+                    });
+                }
+            }
+        }
+        getEventListeners(keyCode){
+            return this.EventListeners[keyCode];
+        }
     }
     class MouseHandler{
         constructor(){
 
         }
     }
+    class Vec{
+        constructor(x, y){
+            this.x = x;
+            this.y = y;
+            this.ang = 0;
+        }
+        add(){
+            if(typeof arguments[0] == 'number' && arguments[1] == undefined){
+                this.x += arguments[0];
+                this.y += arguments[0];
+            }else if(typeof arguments[0] == 'number' && typeof arguments[1] == 'number'){
+                this.x += arguments[0];
+                this.y += arguments[1];
+            }else if(arguments[0] instanceof this){
+                this.x += arguments[0].x;
+                this.y += arguments[0].y;
+            }
+        }
+        mult(){
+            if(typeof arguments[0] == 'number' && arguments[1] == undefined){
+                this.x *= arguments[0];
+                this.y *= arguments[0];
+            }else if(typeof arguments[0] == 'number' && typeof arguments[1] == 'number'){
+                this.x *= arguments[0];
+                this.y *= arguments[1];
+            }else if(arguments[0] instanceof this){
+                this.x *= arguments[0].x;
+                this.y *= arguments[0].y;
+            }
+        }
+        div(){
+            if(typeof arguments[0] == 'number' && arguments[1] == undefined){
+                this.x /= arguments[0];
+                this.y /= arguments[0];
+            }else if(typeof arguments[0] == 'number' && typeof arguments[1] == 'number'){
+                this.x /= arguments[0];
+                this.y /= arguments[1];
+            }else if(arguments[0] instanceof this){
+                this.x /= arguments[0].x;
+                this.y /= arguments[0].y;
+            }
+        }
+        set(){
+            if(typeof arguments[0] == 'number' && arguments[1] == undefined){
+                this.x = arguments[0];
+                this.y = arguments[0];
+            }else if(typeof arguments[0] == 'number' && typeof arguments[1] == 'number'){
+                this.x = arguments[0];
+                this.y = arguments[1];
+            }else if(arguments[0] instanceof this){
+                this.x = arguments[0].x;
+                this.y = arguments[0].y;
+            }
+        }
+    }
+    class Player{
+        constructor(playerID, pos){
+            this.playerID = playerID;
+            this.pos = pos;
+        }
+        moveBy(dPos){
+            this.pos.add(dPos);
+        }
+        moveTo(newPos){
+            this.pos.set(newPos);
+        }
+    }
     class GameClient {
         constructor(clientID) {
             this.clientID = clientID;
+            this.player = new Player(this.clientID, new Vec(0, 0));
         }
     }
     class GamePsuedoServer {
@@ -324,6 +424,7 @@
         _KeyboardHandler.init(_KeysArray);
     }
     function Test(){
+        let UserClient = new GameClient(Hash(128));
         let GameRender = new fabric.Canvas('game_canvas');
         let rect = new fabric.Rect({
             left: 100,
@@ -334,9 +435,15 @@
             selectable: true
         });
         GameRender.add(rect);
+        window.rect = rect;
         let MyKeyboard = new KeyboardHandler();
         CreateKeyInputs(MyKeyboard, DefaultKeys);
-        console.log(MyKeyboard)
+        MyKeyboard.addEventListener(37, 'keydown', function(e){
+            console.log(e);
+            console.log('left arrow pushed');
+        });
+        console.log(MyKeyboard);
+        console.log(UserClient);
     }
     function App(){
         let GameRender = new fabric.Canvas('game_canvas');
