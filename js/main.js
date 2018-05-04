@@ -343,7 +343,7 @@
             this.pos = this.pos.add(dPos);
         }
         moveTo(newPos){
-            this.pos.set(newPos);
+            this.pos.setFromPoint(newPos);
         }
     }
     class GameClient {
