@@ -1,4 +1,4 @@
-(function Main(config) {
+(async function Main(config) {
     const KeyNamesByIndex = [
         "", // [0]
         "", // [1]
@@ -334,6 +334,12 @@
 
         }
     }
+    class GamePsuedoServer {
+        constructor(serverID, hostID) {
+            this.serverID = serverID;
+            this.hostID = hostID;
+        }
+    }
     class Player{
         constructor(playerID, pos){
             this.playerID = playerID;
@@ -350,6 +356,7 @@
         constructor(clientID) {
             this.clientID = clientID;
             this.player = new Player(this.clientID, new fabric.Point(50, 50));
+            this.isHosting = false;
             this.Render;
             this.avatar;
         }
@@ -365,17 +372,34 @@
             this.Render = Render;
             this.Render.add(this.avatar);
         }
+        connect(){
+
+        }
+        disconnect(){
+
+        }
+        host(){
+            if(!this.isHosting){
+                this.isHosting = true;
+                this.Server = new GamePsuedoServer(this.clientID, Hash(256));
+                firebase.database().ref(`servers/${this.Server.serverID}`).update({
+                    hostID: this.Server.hostID,
+                    serverID: this.Server.serverID,
+                    users: []
+                });
+            }
+        }
+        disband(){
+            if(this.isHosting && this.Server){
+                firebase.database().ref(`servers/${this.Server.serverID}`).update(null);
+                this.isHosting = false;
+            }
+        }
         update(){
             let a = this.avatar.canvas.vptCoords.br;
             if(a){
                 this.avatar.setPositionByOrigin(this.player.pos,'center','center');
             }
-        }
-    }
-    class GamePsuedoServer {
-        constructor(serverID, hostID) {
-            this.serverID = serverID;
-            this.hostID = hostID;
         }
     }
     let DefaultKeys = (function(){
@@ -388,12 +412,82 @@
     function CreateKeyInputs(_KeyboardHandler, _KeysArray){
         _KeyboardHandler.init(_KeysArray);
     }
-    function Test(){
-        let UserClient = new GameClient(Hash(128));
-        let GameRender = new fabric.Canvas('game_canvas');
-        GameRender.renderOnAddRemove = true;
-        UserClient.init(GameRender);
-        window.rect = UserClient;
+    
+    function login(){
+        firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider);
+    }
+    function logout(){
+        firebase.auth().signOut();
+    }
+    function SetupMenu(Render, UserClient){
+        config.view = 'menu';
+        Render.clear();
+        let MenuButton = new fabric.Textbox('Play',{
+            left: window.innerWidth/2,
+            top: window.innerHeight/4,
+            fill: 'blue',
+            selectable: false
+        });
+        MenuButton.__eventListeners.mousedown
+        .push(function(){
+            SetupServerBrowser(Render, UserClient);
+        });
+        let LoginButton = new fabric.Textbox('Login',{
+            left: window.innerWidth/2,
+            top: window.innerHeight/3,
+            fill: 'green',
+            selectable: false,
+            visible: firebase.auth().currentUser == null
+        });
+        LoginButton.__eventListeners.mousedown
+        .push(function(){
+            login();
+        });
+        let LogoutButton = new fabric.Textbox('Logout',{
+            left: window.innerWidth/2,
+            top: window.innerHeight/3,
+            fill: 'red',
+            selectable: false,
+            visible: firebase.auth().currentUser != null
+        });
+        LogoutButton.__eventListeners.mousedown
+        .push(function(){
+            logout();
+        });
+        firebase.auth().onAuthStateChanged(function(e){
+            if(config.view == 'menu'){
+                if(firebase.auth().currentUser == null){
+                    LogoutButton.visible = false;
+                    LoginButton.visible = true;
+                }else if(firebase.auth().currentUser != null){
+                    LoginButton.visible = false;
+                    LogoutButton.visible = true;
+                }
+            }
+        });
+        Render.add(MenuButton);
+        Render.add(LoginButton);
+        Render.add(LogoutButton);
+    }
+    function SetupServerBrowser(Render, UserClient){
+        config.view = 'server';
+        Render.clear();
+        let BackButton = new fabric.Textbox('Play',{
+            left: window.innerWidth/2,
+            top: window.innerHeight/4,
+            fill: 'blue',
+            selectable: false
+        });
+        BackButton.__eventListeners.mousedown
+        .push(function(){
+            SetupGame(Render, UserClient);
+        });
+        Render.add(BackButton);
+    }
+    function SetupGame(Render, UserClient){
+        config.view = 'game';
+        Render.clear();
+        UserClient.init(Render);
         let MyKeyboard = new KeyboardHandler();
         CreateKeyInputs(MyKeyboard, DefaultKeys);
         MyKeyboard.addEventListener(37, 'keydown', function(e){
@@ -410,52 +504,41 @@
         });
         MyKeyboard.addEventListener(40, 'keydown', function(e){
             UserClient.player.moveBy(new fabric.Point(0, 10));
-
         });
-        console.log(MyKeyboard);
-        console.log(UserClient);
-        console.log(UserClient.avatar)
-        function update(){
-            UserClient.update();
-            GameRender.renderAndReset();
-            requestAnimationFrame(update)
-        }
-        update();
     }
     function App(){
         let UserClient = new GameClient(Hash(128));
         let GameRender = new fabric.Canvas('game_canvas');
-        GameRender.renderOnAddRemove = true;
-        UserClient.init(GameRender);
-        window.rect = UserClient;
-        let MyKeyboard = new KeyboardHandler();
-        CreateKeyInputs(MyKeyboard, DefaultKeys);
-        MyKeyboard.addEventListener(37, 'keydown', function(e){
-            UserClient.player.moveBy(new fabric.Point(-10, 0));
-
-        });
-        MyKeyboard.addEventListener(38, 'keydown', function(e){
-            UserClient.player.moveBy(new fabric.Point(0, -10));
-
-        });
-        MyKeyboard.addEventListener(39, 'keydown', function(e){
-            UserClient.player.moveBy(new fabric.Point(10, 0));
-
-        });
-        MyKeyboard.addEventListener(40, 'keydown', function(e){
-            UserClient.player.moveBy(new fabric.Point(0, 10));
-
-        });
+        window.GameRender = GameRender;
+        window.UserClient = UserClient;
+        if(config.view == 'menu'){
+            SetupMenu(GameRender, UserClient);
+        }else if(config.view =='server'){
+            SetupServerBrowser(GameRender, UserClient);
+        }else if(config.view =='game'){
+            SetupGame(GameRender, UserClient);
+        }
         function update(){
-            UserClient.update();
+            GameRender.setDimensions({
+                width:window.innerWidth,
+                height:window.innerHeight
+            });
+            if(config.view == 'menu'){
+
+            }else if(config.view == 'server'){
+                
+            }else if(config.view == 'game'){
+                UserClient.update();
+            }
             GameRender.renderAndReset();
             requestAnimationFrame(update)
         }
         update();
     }
-    window.addEventListener('load', config.debug?Test:App, {
+    window.addEventListener('load', App, {
         once: true
     });
 })({
-    debug: window.location.search.startsWith('?debug')
+    debug: window.location.search.startsWith('?debug'),
+    view: 'menu'
 });
