@@ -340,8 +340,11 @@
             this.hostID = hostID;
             this.apply = Object.apply;
         }
-        pullData(data){
-            this.apply(data);
+        setUpstream(serverID){
+            function pullData(data){
+                this.apply(data.val());
+            }
+            firebase.database().ref(`servers/${serverID}`).on('value', pullData);
         }
         update(){
 
@@ -435,7 +438,7 @@
         }
         disband(){
             if(this.hosting && this.Server){
-                firebase.database().ref(`servers/${this.Server.serverID}`).update(null);
+                firebase.database().ref(`servers/${this.Server.serverID}`).set(null);
                 this.disconnect();
                 this.hosting = false;
             }
