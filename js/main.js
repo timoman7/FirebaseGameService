@@ -435,8 +435,8 @@
         }
         disband(){
             if(this.hosting && this.Server){
-                this.disconnect();
                 firebase.database().ref(`servers/${this.Server.serverID}`).update(null);
+                this.disconnect();
                 this.hosting = false;
             }
         }
