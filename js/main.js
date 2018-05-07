@@ -335,9 +335,16 @@
         }
     }
     class GamePsuedoServer {
-        constructor(serverID, hostID) {
+        constructor(hostID, serverID) {
             this.serverID = serverID;
             this.hostID = hostID;
+            this.apply = Object.apply;
+        }
+        pullData(data){
+            this.apply(data);
+        }
+        update(){
+
         }
     }
     class Player{
@@ -353,12 +360,35 @@
         }
     }
     class GameClient {
-        constructor(clientID) {
-            this.clientID = clientID;
-            this.player = new Player(this.clientID, new fabric.Point(50, 50));
-            this.isHosting = false;
-            this.Render;
-            this.avatar;
+        constructor(clientID, online) {
+            function loopUntilAuth(ms, scope){
+                if(firebase.auth().currentUser != null){
+                    firebase.database().ref(`users/${firebase.auth().currentUser.uid}`).once('value', (v)=>{
+                        if(v.val() != null){
+                            scope.clientID = v.val().clientID;
+                            scope.player = new Player(scope.clientID, new fabric.Point(50, 50));
+                            scope.hosting = false;
+                            scope.connected = false;
+                            scope.apply = Object.apply;
+                            scope.Render;
+                            scope.avatar;
+                        }
+                    });
+                }else{
+                    setTimeout(loopUntilAuth, ms, ms, scope);
+                }
+            }
+            if(online == true){
+                loopUntilAuth(100, this);
+            }else{
+                this.clientID = clientID;
+                this.player = new Player(this.clientID, new fabric.Point(50, 50));
+                this.hosting = false;
+                this.connected = false;
+                this.apply = Object.apply;
+                this.Render;
+                this.avatar;
+            }
         }
         init(Render){
             this.avatar = new fabric.Rect({
@@ -372,33 +402,58 @@
             this.Render = Render;
             this.Render.add(this.avatar);
         }
-        connect(){
-
+        connect(server){
+            if(!this.connected){
+                firebase.database().ref(`servers/${server}`).once('value', (v)=>{
+                    if(v.val() != null){
+                        this.Server = new GamePsuedoServer(v.val().hostID, v.val().serverID);
+                        this.connected = true;
+                    }else{
+                        console.error(`Server ${server} not found!`);
+                    }
+                });
+            }
         }
         disconnect(){
-
+            if(this.connected){
+                firebase.database().ref(`servers/${this.Server.serverID}/members/${this}`)
+                this.Server = undefined;
+                this.connected = false;
+            }
         }
         host(){
-            if(!this.isHosting){
-                this.isHosting = true;
+            if(!this.hosting){
+                this.hosting = true;
                 this.Server = new GamePsuedoServer(this.clientID, Hash(256));
                 firebase.database().ref(`servers/${this.Server.serverID}`).update({
                     hostID: this.Server.hostID,
                     serverID: this.Server.serverID,
-                    users: []
+                    members: {}
                 });
+                this.connect(this.Server.serverID);
             }
         }
         disband(){
-            if(this.isHosting && this.Server){
+            if(this.hosting && this.Server){
+                this.disconnect();
                 firebase.database().ref(`servers/${this.Server.serverID}`).update(null);
-                this.isHosting = false;
+                this.hosting = false;
+            }
+        }
+        pullData(){
+            if(this.connected && !this.hosting && this.Server){
+                this.Server.pullData(this.Server.serverID);
             }
         }
         update(){
             let a = this.avatar.canvas.vptCoords.br;
             if(a){
                 this.avatar.setPositionByOrigin(this.player.pos,'center','center');
+                if(this.connected && this.Server){
+                    firebase.database().ref(`servers/${this.Server.serverID}/members/${this.clientID}`).update(this.player);
+                }else if(firebase.auth().currentUser != null){
+                    firebase.database().ref(`users/${firebase.auth().currentUser.uid}`).update(JSON.parse(JSON.stringify(this)));
+                }
             }
         }
     }
@@ -507,7 +562,7 @@
         });
     }
     function App(){
-        let UserClient = new GameClient(Hash(128));
+        let UserClient = new GameClient(Hash(128), true);
         let GameRender = new fabric.Canvas('game_canvas');
         window.GameRender = GameRender;
         window.UserClient = UserClient;
