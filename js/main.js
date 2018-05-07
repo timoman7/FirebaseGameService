@@ -418,7 +418,7 @@
             }
         }
         disconnect(){
-            if(this.connected){
+            if(this.connected && this.Server){
                 firebase.database().ref(`servers/${this.Server.serverID}/members/${this.clientID}`).set(null);
                 this.Server = undefined;
                 this.connected = false;
