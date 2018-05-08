@@ -1,3 +1,4 @@
+import {Config} from './Config.js'
 import GameClient from './GameClient.js';
 import GamePsuedoServer from './GamePsuedoServer.js';
 import Hash from './Hash.js';
@@ -18,10 +19,6 @@ import {} from './NativeExtenders.js';
     });
     window.location.query = queryObject;
 })();
-const config = {
-    debug: window.location.query.hasOwnProperty('debug'),
-    view: window.location.query.view?window.location.query.view:'menu'
-};
 (async function Main(){
 let DefaultKeys = (function(){
     let __keys__ = [];
@@ -41,7 +38,7 @@ function logout(){
     firebase.auth().signOut();
 }
 function SetupMenu(Overlay, UserClient){
-    config.view = 'menu';
+    Config.view = 'menu';
     Overlay.clear();
     let MenuButton = new fabric.Textbox('Play',{
         left: window.innerWidth/2,
@@ -76,7 +73,7 @@ function SetupMenu(Overlay, UserClient){
         logout();
     });
     firebase.auth().onAuthStateChanged(function(e){
-        if(config.view == 'menu'){
+        if(Config.view == 'menu'){
             if(firebase.auth().currentUser == null){
                 LogoutButton.visible = false;
                 LoginButton.visible = true;
@@ -181,7 +178,7 @@ function createServerButton(serverID, serverInfo, yPos, Overlay, UserClient){
     return tempGroup;
 }
 function SetupServerBrowser(Overlay, UserClient){
-    config.view = 'server';
+    Config.view = 'server';
     Overlay.clear();
     let BackButton = new fabric.Textbox('<< Back',{
         left: Overlay.width/2,
@@ -209,7 +206,7 @@ function SetupServerBrowser(Overlay, UserClient){
         UserClient.host();
     });
     function updateServerBrowser(v){
-        if(config.view == 'server'){
+        if(Config.view == 'server'){
             if(v){
                 if(v.val){
                     if(v.val() != null){
@@ -243,7 +240,7 @@ function SetupServerBrowser(Overlay, UserClient){
     Overlay.add(HostButton);
 }
 function SetupGame(Overlay, UserClient){
-    config.view = 'game';
+    Config.view = 'game';
     Overlay.clear();
     let pauseMenu = PauseMenu(Overlay);
     UserClient.init(Overlay);
@@ -281,11 +278,11 @@ function App(){
     let GameOverlay = new fabric.Canvas('game_canvas');
     window.GameOverlay = GameOverlay;
     window.UserClient = UserClient;
-    if(config.view == 'menu'){
+    if(Config.view == 'menu'){
         SetupMenu(GameOverlay, UserClient);
-    }else if(config.view =='server'){
+    }else if(Config.view =='server'){
         SetupServerBrowser(GameOverlay, UserClient);
-    }else if(config.view =='game'){
+    }else if(Config.view =='game'){
         SetupGame(GameOverlay, UserClient);
     }
     function update(){
@@ -293,11 +290,11 @@ function App(){
             width:window.innerWidth,
             height:window.innerHeight
         });
-        if(config.view == 'menu'){
+        if(Config.view == 'menu'){
 
-        }else if(config.view == 'server'){
+        }else if(Config.view == 'server'){
             
-        }else if(config.view == 'game'){
+        }else if(Config.view == 'game'){
             UserClient.update();
             pauseMenu.visible = UserClient.paused;
         }

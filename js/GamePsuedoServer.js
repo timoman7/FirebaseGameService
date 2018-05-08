@@ -1,3 +1,4 @@
+import {Config} from './config.js';
 import GameClient from './GameClient.js';
 import Hash from './Hash.js';
 import Key from './Key.js';

@@ -1,3 +1,4 @@
+import {Config} from './Config.js';
 import GamePsuedoServer from './GamePsuedoServer.js';
 import Hash from './Hash.js';
 import Key from './Key.js';
@@ -51,7 +52,7 @@ export default class GameClient {
         this.avatar = new fabric.Rect({
             left: 100,
             top: 100,
-            fill: config.debug?'red':'green',
+            fill: Config.debug?'red':'green',
             width: 20,
             height: 20,
             selectable: false
@@ -69,7 +70,7 @@ export default class GameClient {
     pullData(){
         let self = this;
         async function __syncPlayers__(p){
-            if(config.view == 'game'){
+            if(Config.view == 'game'){
                 let players = p.val();
                 delete players[self.clientID];
                 self.Overlay._objects.forEach((o)=>{
@@ -92,6 +93,7 @@ export default class GameClient {
         }else if(this.connected && this.hosting && this.Server){
             // Future potential for treating host updates differently
             this.Server.setUpstream(this.Server.serverID);
+            firebase.database().ref(`servers/${this.Server.serverID}/members`).on('value', __syncPlayers__);
         }
     }
     connect(server){
