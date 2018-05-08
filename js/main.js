@@ -448,7 +448,30 @@
             this.paused = !this.paused;
         }
         pullData(){
+            let self = this;
+            async function __syncPlayers__(p){
+                if(config.view == 'game'){
+                    let players = p.val();
+                    delete players[self.clientID];
+                    self.Overlay._objects.forEach((o)=>{
+                        if(o.type == 'playerrect'){
+                            self.Overlay.remove(o);
+                        }
+                    });
+                    Object.values(players).forEach((_p_)=>{
+                        let tempPlayer = new fabric.Rect(_p_.avatar);
+                        tempPlayer.type = 'playerrect';
+                        self.Overlay.add(tempPlayer)
+                    });
+                }else{                
+                    firebase.database().ref(`servers/${self.Server.serverID}/members`).off('value', __syncPlayers__);
+                }
+            }
             if(this.connected && !this.hosting && this.Server){
+                this.Server.setUpstream(this.Server.serverID);
+                firebase.database().ref(`servers/${this.Server.serverID}/members`).on('value', __syncPlayers__);
+            }else if(this.connected && this.hosting && this.Server){
+                // Future potential for treating host updates differently
                 this.Server.setUpstream(this.Server.serverID);
             }
         }
@@ -504,6 +527,9 @@
                     firebase.database().ref(`users/${firebase.auth().currentUser.uid}`).update(serverData);
                 }
             }
+        }
+        renderOthers(){
+
         }
         updateDB(){
             if(firebase.auth().currentUser != null){
