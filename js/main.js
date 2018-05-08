@@ -442,7 +442,6 @@
         }
         serialize(){
             let serializedData = JSON.parse(JSON.stringify(this));
-            delete serializedData.Server;
             return serializedData;
         }
         togglePauseMenu(){
@@ -496,11 +495,13 @@
             let a = this.avatar.canvas.vptCoords.br;
             if(a){
                 this.avatar.setPositionByOrigin(this.player.pos,'center','center');
+                let serverData = this.serialize();
+                delete serverData.Server
                 if(this.connected && this.Server){
-                    firebase.database().ref(`servers/${this.Server.serverID}/members/${this.clientID}`).update(this.serialize());
+                    firebase.database().ref(`servers/${this.Server.serverID}/members/${this.clientID}`).update(serverData);
                 }
                 if(firebase.auth().currentUser != null){
-                    firebase.database().ref(`users/${firebase.auth().currentUser.uid}`).update(this.serialize());
+                    firebase.database().ref(`users/${firebase.auth().currentUser.uid}`).update(serverData);
                 }
             }
         }
@@ -650,6 +651,7 @@
         .push(function(){
             SetupGame(Overlay, UserClient);
             UserClient.connect(serverID);
+            UserClient.pullData();
         });
         let tempGroup = new fabric.Group([tempButton, serverText, serverTextID, playerCount], {
             left: 50,
