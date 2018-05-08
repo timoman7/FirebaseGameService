@@ -1,3 +1,14 @@
+(function(){
+    let _queryObject = window.location.search.split(/\?|\&/g).reverse();
+    let queryObject = {};
+    _queryObject.pop();
+    _queryObject = _queryObject.reverse();
+    _queryObject.forEach((k)=>{
+        let kvp = k.split('=');
+        queryObject[kvp[0]] = kvp[1];
+    });
+    window.location.query = queryObject;
+})();
 (async function Main(config) {
     const KeyNamesByIndex = [
         "", // [0]
@@ -276,6 +287,15 @@
         writable: false,
         enumerable: false
     });
+    Object.defineProperty(fabric.Group.prototype, 'empty', {
+        value: function(){
+            this.getObjects().forEach((o)=>{
+                this.remove(o);
+            });
+        },
+        writable: false,
+        enumerable: false
+    });
     class Key{
         constructor(keyCode){
             this.keyCode = keyCode;
@@ -373,7 +393,7 @@
                             scope.hosting = false;
                             scope.connected = false;
                             scope.apply = Object.apply;
-                            scope.Render;
+                            scope.Overlay;
                             scope.avatar;
                         }
                     });
@@ -389,21 +409,25 @@
                 this.hosting = false;
                 this.connected = false;
                 this.apply = Object.apply;
-                this.Render;
+                this.Overlay;
                 this.avatar;
             }
+            this.paused = false;
         }
-        init(Render){
+        init(Overlay){
             this.avatar = new fabric.Rect({
                 left: 100,
                 top: 100,
                 fill: config.debug?'red':'green',
                 width: 20,
                 height: 20,
-                selectable: true
+                selectable: false
             });
-            this.Render = Render;
-            this.Render.add(this.avatar);
+            this.Overlay = Overlay;
+            this.Overlay.add(this.avatar);
+        }
+        togglePauseMenu(){
+            this.paused = !this.paused;
         }
         connect(server){
             if(!this.connected){
@@ -477,9 +501,9 @@
     function logout(){
         firebase.auth().signOut();
     }
-    function SetupMenu(Render, UserClient){
+    function SetupMenu(Overlay, UserClient){
         config.view = 'menu';
-        Render.clear();
+        Overlay.clear();
         let MenuButton = new fabric.Textbox('Play',{
             left: window.innerWidth/2,
             top: window.innerHeight/4,
@@ -488,7 +512,7 @@
         });
         MenuButton.__eventListeners.mousedown
         .push(function(){
-            SetupServerBrowser(Render, UserClient);
+            SetupServerBrowser(Overlay, UserClient);
         });
         let LoginButton = new fabric.Textbox('Login',{
             left: window.innerWidth/2,
@@ -523,61 +547,183 @@
                 }
             }
         });
-        Render.add(MenuButton);
-        Render.add(LoginButton);
-        Render.add(LogoutButton);
+        Overlay.add(MenuButton);
+        Overlay.add(LoginButton);
+        Overlay.add(LogoutButton);
     }
-    function SetupServerBrowser(Render, UserClient){
+    function PauseMenu(Overlay){
+        let PM_BG = new fabric.Text('yes',{
+            top:20,
+            left:20,
+            originX: 'center',
+            originY: 'center',
+            width:100,
+            height:100,
+            fill:'blue',
+            selectable: false
+        });
+        let PM = new fabric.Group([PM_BG],{
+            left: Overlay.width/2,
+            top: Overlay.height/2,
+            originX: 'center',
+            originY: 'center',
+            width: 100,
+            selectable: false,
+            subTargetCheck: true,
+            evented: true
+        });
+        return PM;
+    }
+    function createServerButton(serverID, serverInfo, yPos, Overlay, UserClient){
+        let xPos = 120;
+        let serverText = new fabric.Text('Server:',{
+            left: xPos,
+            top: 50,
+            originX: 'right',
+            originY: 'top',
+            width: 100,
+            fontSize: 18,
+            fill: 'blue',
+            selectable: false
+        });
+        let serverTextID = new fabric.Text(`${serverID.match(/.{1,64}/g).join('\n')}`,{
+            left: xPos,
+            top: 50,
+            originX: 'left',
+            originY: 'top',
+            width: 400,
+            fontSize: 18,
+            fill: 'blue',
+            selectable: false
+        });
+        let tempButton = new fabric.Textbox('Connect',{
+            left: 50,
+            top: 45,
+            originX: 'right',
+            originY: 'top',
+            fontSize: 30,
+            width: 110,
+            fill: 'blue',
+            selectable: false,
+            evented: true,
+            subTargetCheck: true
+        });
+        let playerCount = new fabric.Text(`${serverInfo.members?Object.values(serverInfo.members).length:'N/A'} player${serverInfo.members?Object.values(serverInfo.members).length==1?'':'s':'s'}`,{
+            left: 50,
+            top: 80,
+            originX: 'right',
+            originY: 'top',
+            fontSize: 18,
+            width: 110,
+            fill: 'blue',
+            selectable: false,
+            evented: true,
+            subTargetCheck: true
+        });
+        tempButton.__eventListeners.mousedown
+        .push(function(){
+            SetupGame(Overlay, UserClient);
+            UserClient.connect(serverID);
+        });
+        let tempGroup = new fabric.Group([tempButton, serverText, serverTextID, playerCount], {
+            left: 50,
+            top: yPos,
+            originX: 'left',
+            originY: 'top',
+            fill: 'red',
+            type: 'serverbutton',
+            height: 200,
+            width: 800,
+            selectable: false,
+            evented: true,
+            subTargetCheck: true
+        }, false);
+        return tempGroup;
+    }
+    function SetupServerBrowser(Overlay, UserClient){
         config.view = 'server';
-        Render.clear();
-        let BackButton = new fabric.Textbox('Play',{
-            left: window.innerWidth/2,
-            top: window.innerHeight/4,
+        Overlay.clear();
+        let BackButton = new fabric.Textbox('<< Back',{
+            left: 10,
+            top: 10,
+            width: 200,
             fill: 'blue',
             selectable: false
         });
         BackButton.__eventListeners.mousedown
         .push(function(){
-            SetupGame(Render, UserClient);
+            SetupMenu(Overlay, UserClient);
         });
-        Render.add(BackButton);
+        function updateServerBrowser(v){
+            if(config.view == 'server'){
+                let servers = v.val();
+                let serverIDs = Object.keys(servers);
+                serverIDs.forEach((s, i)=>{
+                    let sInfo = servers[s];
+                    let newBtn = createServerButton(s, sInfo, (i*40)+40, Overlay, UserClient);
+                    Overlay.add(newBtn);
+                });
+            }else{
+                firebase.database().ref('servers').off('value', updateServerBrowser);
+            }
+        }
+        let passThrough = false;
+        firebase.auth().onAuthStateChanged((a)=>{
+            if(firebase.auth().currentUser != null && !passThrough){
+                firebase.database().ref('servers').on('value', updateServerBrowser);
+                passThrough = true;
+            }
+        });
+        Overlay.add(BackButton);
     }
-    function SetupGame(Render, UserClient){
+    function SetupGame(Overlay, UserClient){
         config.view = 'game';
-        Render.clear();
-        UserClient.init(Render);
+        Overlay.clear();
+        let pauseMenu = PauseMenu(Overlay);
+        UserClient.init(Overlay);
+        GameOverlay.add(pauseMenu);
+        pauseMenu.visible = UserClient.paused;
+        window.pauseMenu = pauseMenu;
         let MyKeyboard = new KeyboardHandler();
         CreateKeyInputs(MyKeyboard, DefaultKeys);
         MyKeyboard.addEventListener(37, 'keydown', function(e){
-            UserClient.player.moveBy(new fabric.Point(-10, 0));
-
+            if(!UserClient.paused){
+                UserClient.player.moveBy(new fabric.Point(-10, 0));
+            }
         });
         MyKeyboard.addEventListener(38, 'keydown', function(e){
-            UserClient.player.moveBy(new fabric.Point(0, -10));
-
+            if(!UserClient.paused){
+                UserClient.player.moveBy(new fabric.Point(0, -10));
+            }
         });
         MyKeyboard.addEventListener(39, 'keydown', function(e){
-            UserClient.player.moveBy(new fabric.Point(10, 0));
-
+            if(!UserClient.paused){
+                UserClient.player.moveBy(new fabric.Point(10, 0));
+            }
         });
         MyKeyboard.addEventListener(40, 'keydown', function(e){
-            UserClient.player.moveBy(new fabric.Point(0, 10));
+            if(!UserClient.paused){
+                UserClient.player.moveBy(new fabric.Point(0, 10));
+            }
+        });
+        MyKeyboard.addEventListener(27, 'keydown', function(e){
+            UserClient.togglePauseMenu();
         });
     }
     function App(){
         let UserClient = new GameClient(Hash(128), true);
-        let GameRender = new fabric.Canvas('game_canvas');
-        window.GameRender = GameRender;
+        let GameOverlay = new fabric.Canvas('game_canvas');
+        window.GameOverlay = GameOverlay;
         window.UserClient = UserClient;
         if(config.view == 'menu'){
-            SetupMenu(GameRender, UserClient);
+            SetupMenu(GameOverlay, UserClient);
         }else if(config.view =='server'){
-            SetupServerBrowser(GameRender, UserClient);
+            SetupServerBrowser(GameOverlay, UserClient);
         }else if(config.view =='game'){
-            SetupGame(GameRender, UserClient);
+            SetupGame(GameOverlay, UserClient);
         }
         function update(){
-            GameRender.setDimensions({
+            GameOverlay.setDimensions({
                 width:window.innerWidth,
                 height:window.innerHeight
             });
@@ -587,8 +733,9 @@
                 
             }else if(config.view == 'game'){
                 UserClient.update();
+                pauseMenu.visible = UserClient.paused;
             }
-            GameRender.renderAndReset();
+            GameOverlay.renderAndReset();
             requestAnimationFrame(update)
         }
         update();
@@ -597,6 +744,6 @@
         once: true
     });
 })({
-    debug: window.location.search.startsWith('?debug'),
-    view: 'menu'
+    debug: window.location.query.hasOwnProperty('debug'),
+    view: window.location.query.view?window.location.query.view:'menu'
 });
