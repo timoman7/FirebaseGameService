@@ -492,6 +492,11 @@
                 }
             }
         }
+        updateDB(){
+            if(firebase.auth().currentUser != null){
+                firebase.database().ref(`users/${firebase.auth().currentUser.uid}`).update(JSON.parse(JSON.stringify(this)));
+            }
+        }
     }
     let DefaultKeys = (function(){
         let __keys__ = [];
@@ -690,6 +695,7 @@
         Overlay.clear();
         let pauseMenu = PauseMenu(Overlay);
         UserClient.init(Overlay);
+        UserClient.updateDB();
         GameOverlay.add(pauseMenu);
         pauseMenu.visible = UserClient.paused;
         window.pauseMenu = pauseMenu;
