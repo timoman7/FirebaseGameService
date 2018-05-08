@@ -396,13 +396,13 @@
                             scope.Overlay;
                             scope.avatar;
                         }else{
-                            this.clientID = clientID;
-                            this.player = new Player(this.clientID, new fabric.Point(50, 50));
-                            this.hosting = false;
-                            this.connected = false;
-                            this.apply = Object.apply;
-                            this.Overlay;
-                            this.avatar;
+                            scope.clientID = clientID;
+                            scope.player = new Player(scope.clientID, new fabric.Point(50, 50));
+                            scope.hosting = false;
+                            scope.connected = false;
+                            scope.apply = Object.apply;
+                            scope.Overlay;
+                            scope.avatar;
                         }
                     });
                 }else{
