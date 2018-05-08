@@ -385,10 +385,11 @@
     class GameClient {
         constructor(clientID, online) {
             function loopUntilAuth(ms, scope){
+                console.log(clientID)
                 if(firebase.auth().currentUser != null){
                     firebase.database().ref(`users/${firebase.auth().currentUser.uid}`).once('value', (v)=>{
                         if(v.val() != null){
-                            scope.clientID = v.val().clientID;
+                            scope.clientID = v.val().clientID || clientID;
                             scope.player = new Player(scope.clientID, new fabric.Point(50, 50));
                             scope.hosting = false;
                             scope.connected = false;
@@ -658,8 +659,9 @@
         config.view = 'server';
         Overlay.clear();
         let BackButton = new fabric.Textbox('<< Back',{
-            left: 10,
+            left: Overlay.width/2,
             top: 10,
+            originX: 'right',
             width: 200,
             fill: 'blue',
             selectable: false
@@ -668,15 +670,34 @@
         .push(function(){
             SetupMenu(Overlay, UserClient);
         });
+        let HostButton = new fabric.Textbox('Host Server',{
+            left: Overlay.width/2,
+            top: 10,
+            width: 200,
+            originX: 'left',
+            fill: 'blue',
+            selectable: false
+        });
+        HostButton.__eventListeners.mousedown
+        .push(function(){
+            SetupGame(Overlay, UserClient);
+            UserClient.host();
+        });
         function updateServerBrowser(v){
             if(config.view == 'server'){
-                let servers = v.val();
-                let serverIDs = Object.keys(servers);
-                serverIDs.forEach((s, i)=>{
-                    let sInfo = servers[s];
-                    let newBtn = createServerButton(s, sInfo, (i*40)+40, Overlay, UserClient);
-                    Overlay.add(newBtn);
-                });
+                if(v){
+                    if(v.val){
+                        if(v.val() != null){
+                            let servers = v.val();
+                            let serverIDs = Object.keys(servers);
+                            serverIDs.forEach((s, i)=>{
+                                let sInfo = servers[s];
+                                let newBtn = createServerButton(s, sInfo, (i*40)+40, Overlay, UserClient);
+                                Overlay.add(newBtn);
+                            });
+                        }
+                    }
+                }
             }else{
                 firebase.database().ref('servers').off('value', updateServerBrowser);
             }
@@ -689,6 +710,7 @@
             }
         });
         Overlay.add(BackButton);
+        Overlay.add(HostButton);
     }
     function SetupGame(Overlay, UserClient){
         config.view = 'game';
