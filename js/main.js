@@ -689,6 +689,11 @@
                         if(v.val() != null){
                             let servers = v.val();
                             let serverIDs = Object.keys(servers);
+                            Overlay._objects.forEach((o)=>{
+                                if(o.type == 'serverbutton'){
+                                    Overlay.remove(o);
+                                }
+                            });
                             serverIDs.forEach((s, i)=>{
                                 let sInfo = servers[s];
                                 let newBtn = createServerButton(s, sInfo, (i*40)+40, Overlay, UserClient);
