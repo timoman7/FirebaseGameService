@@ -1,4 +1,4 @@
-import {Config} from './Config.js';
+import {Config} from './config.js';
 import GamePsuedoServer from './GamePsuedoServer.js';
 import Hash from './Hash.js';
 import Key from './Key.js';
