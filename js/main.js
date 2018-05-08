@@ -358,11 +358,17 @@
         constructor(hostID, serverID) {
             this.serverID = serverID;
             this.hostID = hostID;
-            this.apply = Object.apply;
+        }
+        extend(obj){
+            for(let prop in obj){
+                let val = obj[prop];
+                this[prop] = val;
+            }
         }
         setUpstream(serverID){
+            let self = this;
             function pullData(data){
-                this.apply(data.val());
+                self.extend(data.val());
             }
             firebase.database().ref(`servers/${serverID}`).on('value', pullData);
         }
@@ -392,7 +398,7 @@
                             scope.player = new Player(scope.clientID, new fabric.Point(50, 50));
                             scope.hosting = false;
                             scope.connected = false;
-                            scope.apply = Object.apply;
+                            scope.assign = Object.assign;
                             scope.Overlay;
                             scope.avatar;
                         }else{
@@ -400,7 +406,7 @@
                             scope.player = new Player(scope.clientID, new fabric.Point(50, 50));
                             scope.hosting = false;
                             scope.connected = false;
-                            scope.apply = Object.apply;
+                            scope.assign = Object.assign;
                             scope.Overlay;
                             scope.avatar;
                         }
@@ -416,7 +422,7 @@
                 this.player = new Player(this.clientID, new fabric.Point(50, 50));
                 this.hosting = false;
                 this.connected = false;
-                this.apply = Object.apply;
+                this.assign = Object.assign;
                 this.Overlay;
                 this.avatar;
             }
@@ -477,7 +483,7 @@
         }
         pullData(){
             if(this.connected && !this.hosting && this.Server){
-                this.Server.pullData(this.Server.serverID);
+                this.Server.setUpstream(this.Server.serverID);
             }
         }
         update(){
@@ -696,7 +702,7 @@
                             });
                             serverIDs.forEach((s, i)=>{
                                 let sInfo = servers[s];
-                                let newBtn = createServerButton(s, sInfo, (i*40)+40, Overlay, UserClient);
+                                let newBtn = createServerButton(s, sInfo, (i*100)+40, Overlay, UserClient);
                                 Overlay.add(newBtn);
                             });
                         }
