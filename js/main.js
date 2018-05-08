@@ -395,6 +395,14 @@
                             scope.apply = Object.apply;
                             scope.Overlay;
                             scope.avatar;
+                        }else{
+                            this.clientID = clientID;
+                            this.player = new Player(this.clientID, new fabric.Point(50, 50));
+                            this.hosting = false;
+                            this.connected = false;
+                            this.apply = Object.apply;
+                            this.Overlay;
+                            this.avatar;
                         }
                     });
                 }else{
@@ -425,9 +433,6 @@
             });
             this.Overlay = Overlay;
             this.Overlay.add(this.avatar);
-            if(firebase.auth().currentUser != null){
-                firebase.database().ref(`users/${firebase.auth().currentUser.uid}`).update(JSON.parse(JSON.stringify(this)));
-            }
         }
         togglePauseMenu(){
             this.paused = !this.paused;
