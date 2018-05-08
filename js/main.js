@@ -440,8 +440,18 @@
             this.Overlay = Overlay;
             this.Overlay.add(this.avatar);
         }
+        serialize(){
+            let serializedData = JSON.parse(JSON.stringify(this));
+            delete serializedData.Server;
+            return serializedData;
+        }
         togglePauseMenu(){
             this.paused = !this.paused;
+        }
+        pullData(){
+            if(this.connected && !this.hosting && this.Server){
+                this.Server.setUpstream(this.Server.serverID);
+            }
         }
         connect(server){
             if(!this.connected){
@@ -449,6 +459,7 @@
                     if(v.val() != null){
                         this.Server = new GamePsuedoServer(v.val().hostID, v.val().serverID);
                         this.connected = true;
+                        this.pullData();
                     }else{
                         console.error(`Server ${server} not found!`);
                     }
@@ -481,26 +492,21 @@
                 this.hosting = false;
             }
         }
-        pullData(){
-            if(this.connected && !this.hosting && this.Server){
-                this.Server.setUpstream(this.Server.serverID);
-            }
-        }
         update(){
             let a = this.avatar.canvas.vptCoords.br;
             if(a){
                 this.avatar.setPositionByOrigin(this.player.pos,'center','center');
                 if(this.connected && this.Server){
-                    firebase.database().ref(`servers/${this.Server.serverID}/members/${this.clientID}`).update(this.player);
+                    firebase.database().ref('servers').child(this.Server.serverID).child('members').child(this.clientID).update(this.serialize());
                 }
                 if(firebase.auth().currentUser != null){
-                    firebase.database().ref(`users/${firebase.auth().currentUser.uid}`).update(JSON.parse(JSON.stringify(this)));
+                    firebase.database().ref(`users/${firebase.auth().currentUser.uid}`).update(this.serialize());
                 }
             }
         }
         updateDB(){
             if(firebase.auth().currentUser != null){
-                firebase.database().ref(`users/${firebase.auth().currentUser.uid}`).update(JSON.parse(JSON.stringify(this)));
+                firebase.database().ref(`users/${firebase.auth().currentUser.uid}`).update(this.serialize());
             }
         }
     }
