@@ -695,7 +695,6 @@
         Overlay.clear();
         let pauseMenu = PauseMenu(Overlay);
         UserClient.init(Overlay);
-        UserClient.updateDB();
         GameOverlay.add(pauseMenu);
         pauseMenu.visible = UserClient.paused;
         window.pauseMenu = pauseMenu;
@@ -750,6 +749,7 @@
                 UserClient.update();
                 pauseMenu.visible = UserClient.paused;
             }
+            UserClient.updateDB();
             GameOverlay.renderAndReset();
             requestAnimationFrame(update)
         }
