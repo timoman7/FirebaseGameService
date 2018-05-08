@@ -497,7 +497,7 @@
             if(a){
                 this.avatar.setPositionByOrigin(this.player.pos,'center','center');
                 if(this.connected && this.Server){
-                    firebase.database().ref('servers').child(this.Server.serverID).child('members').child(this.clientID).update(this.serialize());
+                    firebase.database().ref(`servers/${this.Server.serverID}/members/${this.clientID}`).update(this.serialize());
                 }
                 if(firebase.auth().currentUser != null){
                     firebase.database().ref(`users/${firebase.auth().currentUser.uid}`).update(this.serialize());
