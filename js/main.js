@@ -425,6 +425,9 @@
             });
             this.Overlay = Overlay;
             this.Overlay.add(this.avatar);
+            if(firebase.auth().currentUser != null){
+                firebase.database().ref(`users/${firebase.auth().currentUser.uid}`).update(JSON.parse(JSON.stringify(this)));
+            }
         }
         togglePauseMenu(){
             this.paused = !this.paused;
@@ -478,7 +481,8 @@
                 this.avatar.setPositionByOrigin(this.player.pos,'center','center');
                 if(this.connected && this.Server){
                     firebase.database().ref(`servers/${this.Server.serverID}/members/${this.clientID}`).update(this.player);
-                }else if(firebase.auth().currentUser != null){
+                }
+                if(firebase.auth().currentUser != null){
                     firebase.database().ref(`users/${firebase.auth().currentUser.uid}`).update(JSON.parse(JSON.stringify(this)));
                 }
             }
