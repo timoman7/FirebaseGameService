@@ -385,7 +385,6 @@
     class GameClient {
         constructor(clientID, online) {
             function loopUntilAuth(ms, scope){
-                console.log(clientID)
                 if(firebase.auth().currentUser != null){
                     firebase.database().ref(`users/${firebase.auth().currentUser.uid}`).once('value', (v)=>{
                         if(v.val() != null){
