@@ -273,6 +273,48 @@ function SetupGame(Overlay, UserClient){
         UserClient.togglePauseMenu();
     });
 }
+class _Player{
+    constructor(scene, spawnPoint){
+        this.scene = scene;
+        this.spawnPoint = spawnPoint;
+        // The player eyes height
+        this.height = 2;
+        // The player speed
+        this.speed = 0.1;
+        // The player inertia
+        this.inertia = 0.9;
+        // The mouse sensibility (lower is most sensible)
+        this.angularSensibility = 1000;
+        // The player camera
+        this.camera = this.initCamera();
+    }
+    initCamera() {
+        var cam = new BABYLON.FreeCamera("camera", this.spawnPoint, this.scene);
+        cam.attachControl(this.scene.getEngine().getRenderingCanvas());
+        cam.ellipsoid = new BABYLON.Vector3(2, this.height, 2);
+        // Activate collisions
+        cam.checkCollisions = true;
+        // Activate gravity !
+        cam.applyGravity = true;
+
+        // Remap keys to move with ZQSD
+        cam.keysUp = [90]; // Z
+        cam.keysDown = [83]; // S
+        cam.keysLeft = [81]; // Q
+        cam.keysRight = [68]; // D
+        cam.speed = this.speed;
+        cam.inertia = this.inertia;
+        cam.angularSensibility = this.angularSensibility;
+        return cam;
+    }
+    reconfig(prop, config){
+        if(this[prop]){
+            for(let kn in config){
+                this[prop][kn] = config[kn];
+            }
+        }
+    }
+}
 function App(){
     let UserClient = new GameClient(Hash(128), true);
     let canvas = document.querySelector('#game_canvas');
@@ -284,13 +326,16 @@ function App(){
         var scene = new BABYLON.Scene(_engine);
     
         // This creates and positions a free camera (non-mesh)
-        var camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 5, -10), scene);
-    
-        // This targets the camera to scene origin
-        camera.setTarget(BABYLON.Vector3.Zero());
-    
+        var newPlayer = new _Player(scene, new BABYLON.Vector3(0, 3, 0));
+        newPlayer.reconfig('camera', {
+            keysUp: [KeyNamesByIndex.indexOf('W')],
+            keysDown: [KeyNamesByIndex.indexOf('S')],
+            keysLeft: [KeyNamesByIndex.indexOf('A')],
+            keysRight: [KeyNamesByIndex.indexOf('D')]
+        });
+        window.newPlayer = newPlayer;
         // This attaches the camera to the canvas
-        camera.attachControl(canvas, true);
+        // camera.attachControl(canvas, true);
     
         // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
         var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
@@ -303,9 +348,9 @@ function App(){
     
         // Move the sphere upward 1/2 its height
         sphere.position.y = 1;
-    
+        sphere.color = 'red';
         // Our built-in 'ground' shape. Params: name, width, depth, subdivs, scene
-        var ground = BABYLON.Mesh.CreateGround("ground1", 6, 6, 2, scene);
+        var ground = BABYLON.Mesh.CreateGround("ground1", 24, 24, 2, scene);
     
         // GUI
         var plane = BABYLON.Mesh.CreatePlane("plane", 2);
@@ -331,11 +376,11 @@ function App(){
     };
     var scene = createScene(engine);
     window.scene = scene;
-    // engine.runRenderLoop(function(){
-    //     if(scene){
-    //         scene.render();
-    //     }
-    // });
+    engine.runRenderLoop(function(){
+        if(scene){
+            scene.render();
+        }
+    });
     // How to render a scene
     // Need to convert pretty much every piece of ui from fabric to BABYLON
     /*
