@@ -12,6 +12,8 @@ export default class GamePsuedoServer {
     constructor(hostID, serverID) {
         this.serverID = serverID;
         this.hostID = hostID;
+        this.memebers = {};
+        this.world = {};
     }
     extend(obj){
         for(let prop in obj){
